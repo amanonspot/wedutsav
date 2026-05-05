@@ -272,15 +272,14 @@
           const options = document.createElement("fieldset");
           options.className = "options";
 
-          question.opts.forEach((opt, optIndex) => {
+          question.opts.forEach(opt => {
             const optionLabel = document.createElement("label");
             optionLabel.className = "option";
 
             const optionInput = document.createElement("input");
-            optionInput.type = "radio";
+            optionInput.type = "checkbox";
             optionInput.name = `q-${qIndex}`;
             optionInput.value = opt;
-            optionInput.required = optIndex === 0;
 
             optionLabel.appendChild(optionInput);
             optionLabel.appendChild(document.createTextNode(opt));
@@ -340,13 +339,17 @@
           throw new Error("Name is required.");
         }
 
-        const entries = flatQuestions.map(item => ({
-          category: item.category,
-          question: item.question,
-          answer: (fd.get(item.key) || "").toString()
-        }));
+        const entries = flatQuestions.map(item => {
+          const selectedAnswers = fd.getAll(item.key).map(v => String(v).trim()).filter(Boolean);
+          return {
+            category: item.category,
+            question: item.question,
+            answer: selectedAnswers.join(", "),
+            selectedAnswers
+          };
+        });
 
-        if (entries.some(entry => !entry.answer)) {
+        if (entries.some(entry => entry.selectedAnswers.length === 0)) {
           throw new Error("Please answer all questions.");
         }
 
