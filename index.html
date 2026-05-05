@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wedutsav ICP Form</title>
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --surface: #ffffff;
+      --text: #1c2434;
+      --muted: #62708a;
+      --border: #d9e0ee;
+      --brand: #0d7f4b;
+      --brand-strong: #085d36;
+      --danger: #b3261e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      background: radial-gradient(circle at 20% 0%, #ecf5ff 0, #f6f8fc 36%), var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 24px rgba(15, 34, 67, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .meta-card {
+      background: #f7fbf9;
+      border: 1px solid #d6e9de;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .field-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--text);
+      background: #fff;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #8cb2ff;
+      box-shadow: 0 0 0 4px rgba(74, 129, 255, 0.14);
+    }
+
+    .section {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 18px;
+      background: #fff;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .question {
+      border-top: 1px dashed #e5ebf7;
+      padding: 14px 0;
+    }
+
+    .question:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .q-title {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .options {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #2d3a52;
+    }
+
+    .status {
+      margin-top: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      min-height: 22px;
+    }
+
+    .status.error { color: var(--danger); }
+    .status.success { color: var(--brand-strong); }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--brand);
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+
+    button:hover { background: #0a6f41; }
+    button:active { transform: translateY(1px); }
+    button:disabled {
+      background: #95c7af;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Wedutsav ICP & Meta Ads Form</h1>
+    <p class="subtitle">Collects Name + Entries and sends them to Google Sheets via Google Apps Script.</p>
+
+    <form id="surveyForm">
+      <section class="meta-card">
+        <label class="field-label" for="respondentName">Name</label>
+        <input id="respondentName" name="respondentName" type="text" required placeholder="Enter respondent name">
+      </section>
+
+      <div id="questionSections"></div>
+
+      <button id="submitBtn" type="submit">Submit Form</button>
+      <div class="status" id="statusBox"></div>
+      <p class="footer-note">Before going live, update <code>GOOGLE_SCRIPT_WEB_APP_URL</code> in this file.</p>
+    </form>
+  </main>
+
+  <script>
+    const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwstd0CjIhpOkXfNMOhenQQivLe6pRXU7RjvlNV5m6Hm9ywfhamBO_qlhTX1Liqbc8U-w/exec";
+
+    const formData = [
+      {
+        category: "Demographics & Client Profile",
+        questions: [
+          { q: "What is the typical age group of couples who have booked with you so far?", opts: ["18-25", "25-32", "32-40", "40+"] },
+          { q: "Which city or region do most of your clients come from?", opts: ["Within the same city", "Same state, different city", "Different state entirely", "Mix of all"] },
+          { q: "What is the approximate monthly household income of your ideal client?", opts: ["INR 50k-1L", "INR 1L-2L", "INR 2L-5L", "INR 5L+"] },
+          { q: "What describes the profession of most clients who hired you?", opts: ["Salaried professionals", "Business owners / entrepreneurs", "NRIs / abroad-based", "Government / PSU employees"] }
+        ]
+      },
+      {
+        category: "Wedding Budget & Scale",
+        questions: [
+          { q: "What is the typical total wedding budget of your best-fit clients?", opts: ["INR 5L-15L", "INR 15L-40L", "INR 40L-1Cr", "INR 1Cr+"] },
+          { q: "How many guests does the ideal wedding you manage typically have?", opts: ["Under 100", "100-300", "300-600", "600+"] },
+          { q: "What type of wedding event does your service most commonly handle?", opts: ["Full wedding (all functions)", "Destination wedding only", "Specific events (reception/mehendi)", "Corporate + wedding hybrid"] },
+          { q: "How far in advance do most clients reach out to you before their wedding date?", opts: ["1-3 months", "3-6 months", "6-12 months", "1 year+"] }
+        ]
+      },
+      {
+        category: "Client Psychology & Pain Points",
+        questions: [
+          { q: "What is the top reason clients say they hired a wedding manager instead of doing it themselves?", opts: ["Too busy / no time", "Want it to be perfect / stress-free", "First wedding in family, no experience", "Vendor management feels overwhelming"] },
+          { q: "What emotion best describes your ideal client when they first approach you?", opts: ["Excited but overwhelmed", "Already stressed / panicked", "Calmly planning ahead", "Confused about where to start"] },
+          { q: "What do clients fear most about wedding planning without a professional?", opts: ["Vendor no-shows / fraud", "Going over budget", "Poor coordination on the day", "Missing out on trends / aesthetics"] },
+          { q: "Which of these motivates your client most when choosing a wedding planner?", opts: ["Portfolio / past work quality", "Word of mouth / referral", "Price / package value", "Quick response & professionalism"] }
+        ]
+      },
+      {
+        category: "Decision-Making Process",
+        questions: [
+          { q: "Who is typically the primary decision-maker when booking your service?", opts: ["The bride", "The groom", "Parents of bride/groom", "Couple jointly"] },
+          { q: "How do most clients first discover your service?", opts: ["Instagram / Meta ads", "Word of mouth / referral", "Google search", "Wedding portals (WedMeGood, etc.)"] },
+          { q: "How many other planners do clients usually compare before choosing you?", opts: ["Just 1-2", "3-5", "6-10", "More than 10"] },
+          { q: "What typically seals the deal when a client is comparing planners?", opts: ["Seeing real past work / reel", "One-on-one consultation call", "Pricing transparency", "Client testimonials / reviews"] }
+        ]
+      },
+      {
+        category: "Meta Ads Targeting Base",
+        questions: [
+          { q: "Which platform do your current or potential clients spend the most time on?", opts: ["Instagram (Reels/Stories)", "Facebook", "YouTube", "WhatsApp + word of mouth"] },
+          { q: "What type of content makes your potential clients stop scrolling and engage?", opts: ["Before & after transformation reels", "Behind-the-scenes planning footage", "Testimonial videos from real couples", "Aesthetic highlight / vibe reels"] },
+          { q: "What should your ideal ad CTA (call to action) lead to?", opts: ["DM on Instagram", "WhatsApp enquiry", "Book a free consultation call", "Fill a lead form"] },
+          { q: "Which ad objective best fits your current business goal?", opts: ["Lead generation (collect enquiries)", "Brand awareness (visibility)", "Traffic to website/portfolio", "Conversions (direct bookings)"] }
+        ]
+      },
+      {
+        category: "Competitive Positioning",
+        questions: [
+          { q: "What makes your service genuinely different from other wedding planners in your city?", opts: ["Niche specialization (destination/luxury)", "End-to-end service at all budgets", "Strong vendor network & negotiation", "Personalized & hands-on approach"] },
+          { q: "What price positioning do you want to communicate in ads?", opts: ["Premium / luxury (price not the focus)", "Best value for money", "Transparent & affordable packages", "Customizable for every budget"] },
+          { q: "Which type of wedding are you most confident and experienced in?", opts: ["South Indian weddings", "North Indian / Punjabi weddings", "Destination / resort weddings", "Multi-cultural / fusion weddings"] }
+        ]
+      }
+    ];
+
+    const sectionsEl = document.getElementById("questionSections");
+    const surveyForm = document.getElementById("surveyForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusBox = document.getElementById("statusBox");
+
+    const flatQuestions = [];
+
+    function renderQuestions() {
+      sectionsEl.innerHTML = "";
+      let qIndex = 0;
+
+      formData.forEach(section => {
+        const sectionEl = document.createElement("section");
+        sectionEl.className = "section";
+
+        const titleEl = document.createElement("h2");
+        titleEl.className = "section-title";
+        titleEl.textContent = section.category;
+        sectionEl.appendChild(titleEl);
+
+        section.questions.forEach(question => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "question";
+
+          const title = document.createElement("p");
+          title.className = "q-title";
+          title.textContent = `Q${qIndex + 1}. ${question.q}`;
+          wrapper.appendChild(title);
+
+          const options = document.createElement("fieldset");
+          options.className = "options";
+
+          question.opts.forEach((opt, optIndex) => {
+            const optionLabel = document.createElement("label");
+            optionLabel.className = "option";
+
+            const optionInput = document.createElement("input");
+            optionInput.type = "radio";
+            optionInput.name = `q-${qIndex}`;
+            optionInput.value = opt;
+            optionInput.required = optIndex === 0;
+
+            optionLabel.appendChild(optionInput);
+            optionLabel.appendChild(document.createTextNode(opt));
+            options.appendChild(optionLabel);
+          });
+
+          wrapper.appendChild(options);
+          sectionEl.appendChild(wrapper);
+
+          flatQuestions.push({
+            category: section.category,
+            question: question.q,
+            key: `q-${qIndex}`
+          });
+          qIndex += 1;
+        });
+
+        sectionsEl.appendChild(sectionEl);
+      });
+    }
+
+    function setStatus(message, type) {
+      statusBox.textContent = message;
+      statusBox.className = `status ${type || ""}`;
+    }
+
+    async function submitEntries(payload) {
+      const body = new URLSearchParams();
+      body.append("payload", JSON.stringify(payload));
+
+      await fetch(GOOGLE_SCRIPT_WEB_APP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+        },
+        body
+      });
+    }
+
+    surveyForm.addEventListener("submit", async event => {
+      event.preventDefault();
+
+      if (GOOGLE_SCRIPT_WEB_APP_URL.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
+        setStatus("Please set GOOGLE_SCRIPT_WEB_APP_URL before submitting.", "error");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      setStatus("Submitting...", "");
+
+      try {
+        const fd = new FormData(surveyForm);
+        const name = (fd.get("respondentName") || "").toString().trim();
+
+        if (!name) {
+          throw new Error("Name is required.");
+        }
+
+        const entries = flatQuestions.map(item => ({
+          category: item.category,
+          question: item.question,
+          answer: (fd.get(item.key) || "").toString()
+        }));
+
+        if (entries.some(entry => !entry.answer)) {
+          throw new Error("Please answer all questions.");
+        }
+
+        const payload = {
+          submittedAt: new Date().toISOString(),
+          name,
+          entries
+        };
+
+        await submitEntries(payload);
+        surveyForm.reset();
+        setStatus("Submission sent successfully.", "success");
+      } catch (error) {
+        setStatus(error.message || "Submission failed.", "error");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    renderQuestions();
+  </script>
+</body>
+</html>
