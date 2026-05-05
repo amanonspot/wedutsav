@@ -41,11 +41,12 @@ with your deployed Apps Script URL.
 1. Open `index.html` in browser.
 2. Fill name and answers.
 3. Click submit.
-4. Check Google Sheet: each row stores timestamp, submittedAt, name, and all entries JSON.
+4. Check Google Sheet: each question answer is written into its own column.
 
 ## Data format stored in sheet
 
 - `Timestamp`: server-side save time.
 - `SubmittedAtISO`: client timestamp.
 - `Name`: user name.
-- `EntriesJSON`: JSON array of question/answer objects.
+- `EntriesJSON`: full JSON backup of all answers.
+- `Q01...Q23` columns: one answer per question (readable format).
