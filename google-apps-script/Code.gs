@@ -105,3 +105,69 @@ function ensureHeadersAndGetMap_(sheet, questionHeaders) {
   });
   return headerMap;
 }
+
+// Run once from Apps Script editor to convert existing EntriesJSON rows
+// into readable per-question columns.
+function backfillQuestionColumns() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    throw new Error("Sheet not found: " + SHEET_NAME);
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const lastCol = sheet.getLastColumn();
+  const headerRow = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const entriesJsonCol = headerRow.indexOf("EntriesJSON") + 1;
+  if (!entriesJsonCol) {
+    throw new Error("EntriesJSON column not found.");
+  }
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  const unionQuestionHeaders = [];
+
+  rows.forEach(function(row) {
+    const raw = row[entriesJsonCol - 1];
+    if (!raw) return;
+    let entries = [];
+    try {
+      entries = JSON.parse(String(raw));
+    } catch (_err) {
+      return;
+    }
+
+    buildQuestionHeaders_(entries).forEach(function(qHeader) {
+      if (unionQuestionHeaders.indexOf(qHeader) === -1) {
+        unionQuestionHeaders.push(qHeader);
+      }
+    });
+  });
+
+  const headerMap = ensureHeadersAndGetMap_(sheet, unionQuestionHeaders);
+  const updatedLastCol = sheet.getLastColumn();
+  const updatedRows = sheet.getRange(2, 1, lastRow - 1, updatedLastCol).getValues();
+
+  updatedRows.forEach(function(row, rowIndex) {
+    const raw = row[headerMap.EntriesJSON - 1];
+    if (!raw) return;
+    let entries = [];
+    try {
+      entries = JSON.parse(String(raw));
+    } catch (_err) {
+      return;
+    }
+
+    entries.forEach(function(entry, index) {
+      const questionHeader = "Q" + String(index + 1).padStart(2, "0") + " | " + String(entry.question || "");
+      const col = headerMap[questionHeader];
+      if (col) {
+        row[col - 1] = String(entry.answer || "");
+      }
+    });
+
+    updatedRows[rowIndex] = row;
+  });
+
+  sheet.getRange(2, 1, updatedRows.length, updatedLastCol).setValues(updatedRows);
+}

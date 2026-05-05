@@ -50,3 +50,13 @@ with your deployed Apps Script URL.
 - `Name`: user name.
 - `EntriesJSON`: full JSON backup of all answers.
 - `Q01...Q23` columns: one answer per question (readable format).
+
+## Existing old rows (already saved in JSON)
+
+If older submissions still appear only in `EntriesJSON`, run this once in Apps Script:
+
+1. Select function `backfillQuestionColumns`.
+2. Click `Run`.
+3. Approve permissions if asked.
+
+This converts old JSON rows into question-wise columns too.
